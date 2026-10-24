@@ -1,7 +1,7 @@
 
 import OpenAI from "openai";
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
+import pdf from "pdf-parse";
 
 const ai = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY,
@@ -31,15 +31,9 @@ async function extractPaper(file: File): Promise<string> {
   }
 
   if (name.endsWith(".pdf")) {
-    const parser = new PDFParse({ data: buffer });
-
-    try {
-      const result = await parser.getText();
-      return result.text.trim();
-    } finally {
-      await parser.destroy();
-    }
-  }
+  const result = await pdf(buffer);
+  return result.text.trim();
+}
 
   throw new Error("目前仅支持 PDF 和 DOCX 文件。");
 }

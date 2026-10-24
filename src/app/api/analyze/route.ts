@@ -1,7 +1,7 @@
 
 import OpenAI from "openai";
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
+import pdf from "pdf-parse";
 
 
 const ai = new OpenAI({
@@ -10,7 +10,7 @@ const ai = new OpenAI({
 });
 
 export async function POST(request: Request) {
-  let parser: PDFParse | undefined;
+
 
   try {
     if (!process.env.DEEPSEEK_API_KEY) {
@@ -41,10 +41,10 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     let paperText = "";
 
-    if (name.endsWith(".pdf")) {
-      parser = new PDFParse({ data: buffer });
-      const result = await parser.getText();
-      paperText = result.text;
+if (name.endsWith(".pdf")) {
+  const result = await pdf(buffer);
+  paperText = result.text;
+
     } else if (name.endsWith(".docx")) {
       const result = await mammoth.extractRawText({ buffer });
       paperText = result.value;
@@ -134,9 +134,6 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     );
-  } finally {
-    if (parser) {
-      await parser.destroy();
-    }
-  }
+
+}
 }
