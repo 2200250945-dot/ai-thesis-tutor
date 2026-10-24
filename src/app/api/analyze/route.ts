@@ -2,12 +2,8 @@
 import OpenAI from "openai";
 import mammoth from "mammoth";
 import pdf from "pdf-parse";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-
-const ai = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: "https://api.deepseek.com",
-});
 
 export async function POST(request: Request) {
 
@@ -19,6 +15,25 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    const rateLimit = await checkRateLimit(request, "analyze", 3, 60_000);
+    if (rateLimit.status === "unconfigured") {
+      return Response.json(
+        { error: "服务暂时不可用，请稍后重试。" },
+        { status: 503 }
+      );
+    }
+    if (rateLimit.status === "limited") {
+      return Response.json(
+        { error: "请求太频繁，请稍后再试。" },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+      );
+    }
+
+    const ai = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: "https://api.deepseek.com",
+    });
 
     const form = await request.formData();
     const file = form.get("file");

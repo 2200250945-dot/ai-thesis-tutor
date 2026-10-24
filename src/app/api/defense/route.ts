@@ -2,11 +2,7 @@
 import OpenAI from "openai";
 import mammoth from "mammoth";
 import pdf from "pdf-parse";
-
-const ai = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: "https://api.deepseek.com",
-});
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -47,6 +43,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const rateLimit = await checkRateLimit(request, "defense", 15, 60_000);
+    if (rateLimit.status === "unconfigured") {
+      return Response.json(
+        { error: "服务暂时不可用，请稍后重试。" },
+        { status: 503 }
+      );
+    }
+    if (rateLimit.status === "limited") {
+      return Response.json(
+        { error: "请求太频繁，请稍后再试。" },
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+      );
+    }
+
+    const ai = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: "https://api.deepseek.com",
+    });
+
     const contentType = request.headers.get("content-type") || "";
     let mode: string;
     let paperText: string;
@@ -85,13 +100,26 @@ if (Number.isFinite(requestedQuestionCount) && requestedQuestionCount >= 1) {
       userAnswer = body.userAnswer || "";
       questionNumber = Number(body.questionNumber) || 1;
       maxQuestions = Math.min(
-        10,
-        Math.max(1, Number(body.maxQuestions) || 10)
+        20,
+        Math.max(1, Math.floor(Number(body.maxQuestions) || 10))
       );
 
       if (typeof paperText !== "string" || !paperText.trim()) {
         return Response.json(
           { error: "缺少论文正文，请重新上传论文。" },
+          { status: 400 }
+        );
+      }
+
+      if (paperText.length > 50_000) {
+        return Response.json(
+          { error: "论文内容过长，请重新上传论文或缩短内容。" },
+          { status: 400 }
+        );
+      }
+      if (userAnswer.length > 8_000 || currentQuestion.length > 2_000 || history.length > 20) {
+        return Response.json(
+          { error: "提交内容超出允许范围，请缩短回答后重试。" },
           { status: 400 }
         );
       }
@@ -288,12 +316,7 @@ summary:
     console.error("答辩接口错误：", error);
 
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "答辩请求失败，请检查服务器日志。",
-      },
+      { error: "答辩请求失败，请稍后重试。" },
       { status: 500 }
     );
   }
