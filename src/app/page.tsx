@@ -36,6 +36,7 @@ const [defensePaperText, setDefensePaperText] = useState("");
 const [stateRestored, setStateRestored] = useState(false);
 const [defenseRecords, setDefenseRecords] = useState<any[]>([]);
 const [showHistory, setShowHistory] = useState(false);
+const [legalPanel, setLegalPanel] = useState<"privacy" | "terms" | null>(null);
 const [selectedRecord, setSelectedRecord] = useState<any>(null);
 const [checkedPrepItems, setCheckedPrepItems] = useState<string[]>([]);
 const [prepChecklistRestored, setPrepChecklistRestored] = useState(false);
@@ -1097,7 +1098,7 @@ onClick={() => {
 )}
 
           <p className="mt-4 text-center text-xs leading-5 text-gray-400">
-            测试版本 · 论文尚未上传至 AI 服务
+            论文内容会发送至后端及配置的 AI 服务处理
             <br />
             请勿上传包含敏感个人信息的文件
           </p>
@@ -1152,9 +1153,16 @@ onClick={() => {
         </div>
       </section>
       <footer className="border-t border-gray-200 bg-[#f7f8fa]">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-7 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-          <span>答辩通 · AI 论文导师</span>
-          <span>帮助你更好地理解自己的论文，做好答辩准备。</span>
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-7 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p>答辩通 · AI 论文导师</p>
+            <p>帮助你更好地理解自己的论文，做好答辩准备。</p>
+          </div>
+          <nav aria-label="法律与隐私信息" className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <button type="button" onClick={() => setLegalPanel("privacy")} className="transition hover:text-[#233b61]">隐私政策</button>
+            <button type="button" onClick={() => setLegalPanel("terms")} className="transition hover:text-[#233b61]">用户使用协议</button>
+            <span>AI 生成内容仅供学习与答辩练习参考</span>
+          </nav>
         </div>
       </footer>
       </div>
@@ -1284,6 +1292,46 @@ onClick={() => {
         )}
       </div>
     </div>
+  </div>
+)}
+
+{legalPanel && (
+  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="legal-panel-title">
+    <section className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <header className="flex items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-7">
+        <div>
+          <p className="text-xs font-medium tracking-wide text-[#6682a4]">答辩通 · AI THESIS MENTOR</p>
+          <h2 id="legal-panel-title" className="mt-1 text-xl font-semibold text-[#233b61]">
+            {legalPanel === "privacy" ? "隐私政策" : "用户使用协议"}
+          </h2>
+        </div>
+        <button type="button" onClick={() => setLegalPanel(null)} className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">关闭</button>
+      </header>
+      <div className="overflow-y-auto px-5 py-5 text-sm leading-7 text-gray-700 sm:px-7">
+        {legalPanel === "privacy" ? (
+          <div className="space-y-5">
+            <p className="text-xs text-gray-500">说明：这是当前测试版本的隐私信息说明。正式对外运营前，请根据实际部署、模型服务商及数据保留设置进行核实和完善。</p>
+            <section><h3 className="font-semibold text-gray-900">一、我们处理哪些信息</h3><p>当你使用论文诊断或模拟答辩功能时，系统会处理你主动选择上传的论文文件及从论文中提取的文本，并将相关内容发送至本网站的后端接口，以生成诊断、问题、回答评价和总结。请勿上传与功能无关的资料。</p></section>
+            <section><h3 className="font-semibold text-gray-900">二、AI 服务处理</h3><p>为提供 AI 分析与答辩训练，后端会将完成请求所需的论文文本、问题及回答内容发送给配置的 AI 模型服务。相关服务对数据的处理和保留，可能受其服务条款、隐私政策及账户配置约束。使用者应在上传前确认自己有权提交相关内容。</p></section>
+            <section><h3 className="font-semibold text-gray-900">三、浏览器本地存储</h3><p>当前版本会在你使用的浏览器本地保存部分答辩会话、历史答辩记录和准备清单，以便刷新后恢复或查看。能够访问该浏览器用户配置文件的人，可能接触这些本地记录。清除网站数据或浏览器存储可能导致记录丢失；更换设备或浏览器通常不会自动同步这些记录。</p></section>
+            <section><h3 className="font-semibold text-gray-900">四、信息安全与敏感内容</h3><p>我们会通过应用配置和访问控制尽力保护处理中的信息，但互联网传输和在线服务无法保证绝对安全。请避免上传身份证号码、联系方式、未公开的商业秘密、他人个人信息或其他不适合提交给第三方 AI 服务的内容。</p></section>
+            <section><h3 className="font-semibold text-gray-900">五、数据保留与删除</h3><p>当前版本的历史记录主要保存在本地浏览器。上传内容在后端及 AI 服务侧的具体保留时间，需以实际部署和服务商配置为准；本页面不作超出已核实配置的删除时限承诺。如需清除本地记录，可使用页面中的“重置测试”功能，或清除浏览器中本网站的数据。</p></section>
+            <section><h3 className="font-semibold text-gray-900">六、政策更新与联系</h3><p>测试版本的功能、数据流程或服务商配置发生变化时，本说明也应相应更新。正式运营前，请在此补充可用的运营主体名称和联系渠道，供用户提出隐私相关请求。</p></section>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <p className="text-xs text-gray-500">使用本网站前，请阅读以下测试版使用规则。正式上线前应结合实际运营主体及适用法律完成审核。</p>
+            <section><h3 className="font-semibold text-gray-900">一、服务内容</h3><p>答辩通提供论文内容整理、AI 论文诊断、模拟答辩提问、回答反馈及训练记录等辅助功能，旨在帮助用户准备学习和答辩练习。</p></section>
+            <section><h3 className="font-semibold text-gray-900">二、用户提交内容</h3><p>你应确保对上传论文及提交的回答拥有必要权利或已取得授权。不得提交违法内容、侵犯他人权益的材料，或未经许可披露的个人信息、保密信息及研究数据。</p></section>
+            <section><h3 className="font-semibold text-gray-900">三、AI 结果的限制</h3><p>AI 生成的诊断、问题、评分和建议可能存在遗漏、错误或不准确之处，不构成学校、导师、评审机构的正式意见，也不保证论文通过审核或答辩。请结合论文原文、真实数据、指导教师意见及学校要求自行核验，不应将 AI 建议当作事实依据而不加检查。</p></section>
+            <section><h3 className="font-semibold text-gray-900">四、学术诚信</h3><p>本服务用于学习、理解和答辩准备。用户应遵守学校的学术诚信规范，不得使用本服务伪造研究过程、数据、文献或研究成果，也不得以生成内容冒充真实研究证据。</p></section>
+            <section><h3 className="font-semibold text-gray-900">五、可用性与责任</h3><p>服务可能因网络、模型服务、维护或配置问题暂时不可用。请自行保留重要论文、回答和训练结果的备份。对于 AI 输出或本地浏览器数据丢失，应结合具体情况处理；本说明不排除适用法律规定不得排除的责任。</p></section>
+            <section><h3 className="font-semibold text-gray-900">六、协议更新</h3><p>功能或运营方式变化时，使用规则可能相应更新。正式运营时，应在本页面明确协议生效日期、运营主体和有效的联系渠道。</p></section>
+          </div>
+        )}
+      </div>
+      <footer className="border-t border-gray-200 px-5 py-3 text-xs text-gray-500 sm:px-7">当前为测试版本说明。请在正式商业运营前核对实际数据流程，并完成必要的法律与隐私合规审查。</footer>
+    </section>
   </div>
 )}
 
