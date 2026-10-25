@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 答辩通 · AI Thesis Mentor
 
-## Getting Started
+让每一次论文答辩练习，都更有准备。
 
-First, run the development server:
+**答辩通**是一款面向毕业论文答辩准备场景的 AI 辅助工具，帮助学生提前检查论文、模拟导师提问，并练习组织答辩回答。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 在线体验
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+🌐 网站地址：https://ai-thesis-tutor-seven.vercel.app
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 核心功能
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **AI 论文诊断**：上传 PDF 或 DOCX 论文，获取 AI 分析与改进建议。
+- **模拟答辩**：根据论文内容生成答辩问题，逐题练习。
+- **回答反馈**：对练习回答提供点评、评分与参考回答。
+- **训练记录**：在本地浏览器保存训练进度与历史记录。
+- **答辩准备清单**：整理重点任务，帮助用户进行答辩前复盘。
 
-## Learn More
+## 如何使用
 
-To learn more about Next.js, take a look at the following resources:
+1. 打开在线体验网址。
+2. 上传 PDF 或 DOCX 格式的论文。
+3. 选择导师风格和问题数量。
+4. 开始论文诊断或模拟答辩。
+5. 根据反馈完善自己的答辩准备。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 项目状态
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+当前为个人运营的免费试用项目，功能仍在持续完善中。
 
-## Deploy on Vercel
+欢迎体验并反馈问题，包括页面显示、论文解析、提问质量和使用流程等方面的建议。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 注意事项
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 本工具生成的分析和反馈仅用于学习与答辩练习，不代表学校的正式评审意见。
+- 请勿上传包含身份证号、联系方式、未公开研究数据等不必要的敏感信息。
+- 上传的论文内容会发送至项目使用的 AI 服务进行处理，请在使用前确认自己有权提供相关内容。
+- AI 生成的结论可能存在错误，请结合论文原文进行核对。
+
+## 技术与部署
+
+本项目基于 Next.js 构建，使用服务端 API 处理论文诊断和模拟答辩请求。
+
