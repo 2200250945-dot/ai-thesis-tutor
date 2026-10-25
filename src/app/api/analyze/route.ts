@@ -2,22 +2,13 @@
 import OpenAI from "openai";
 import mammoth from "mammoth";
 import pdf from "pdf-parse";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit, checkDailyGlobalLimit } from "@/lib/rate-limit";
 
 
 export async function POST(request: Request) {
 
 
   try {
-    // Reject oversized multipart uploads before parsing the form.
-    const contentLength = Number(request.headers.get("content-length") || 0);
-    if (contentLength > 16 * 1024 * 1024) {
-      return Response.json(
-        { error: "上传请求过大，请将论文文件控制在 15 MB 以内。" },
-        { status: 413 }
-      );
-    }
-
     if (!process.env.DEEPSEEK_API_KEY) {
       return Response.json(
         { error: "服务器尚未配置 DeepSeek API Key。" },
@@ -43,14 +34,6 @@ export async function POST(request: Request) {
       apiKey: process.env.DEEPSEEK_API_KEY,
       baseURL: "https://api.deepseek.com",
     });
-
-    const contentType = request.headers.get("content-type") || "";
-    if (!contentType.toLowerCase().includes("multipart/form-data")) {
-      return Response.json(
-        { error: "请求格式不正确，请通过文件上传功能提交论文。" },
-        { status: 400 }
-      );
-    }
 
     const form = await request.formData();
     const file = form.get("file");
@@ -99,6 +82,20 @@ if (name.endsWith(".pdf")) {
 
     // MVP：限制输入长度，控制单次调用的成本。
     const text = paperText.slice(0, 50000);
+
+    const dailyLimit = await checkDailyGlobalLimit();
+    if (dailyLimit.status === "unconfigured") {
+      return Response.json(
+        { error: "服务保护暂时不可用，请稍后重试。" },
+        { status: 503 }
+      );
+    }
+    if (dailyLimit.status === "limited") {
+      return Response.json(
+        { error: "今日免费试用额度已用完，请明天再试。" },
+        { status: 429, headers: { "Retry-After": String(dailyLimit.retryAfterSeconds) } }
+      );
+    }
 
     const completion = await ai.chat.completions.create({
       model: "deepseek-chat",
