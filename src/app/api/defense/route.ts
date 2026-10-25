@@ -36,6 +36,19 @@ async function extractPaper(file: File): Promise<string> {
 
 export async function POST(request: Request) {
   try {
+    // Bound request size before parsing; multipart allows a 15 MB file plus overhead.
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    const contentTypeHeader = (request.headers.get("content-type") || "").toLowerCase();
+    const isMultipartRequest = contentTypeHeader.includes("multipart/form-data");
+    const maxRequestBytes = isMultipartRequest ? 16 * 1024 * 1024 : 512 * 1024;
+    if (contentLength > maxRequestBytes) {
+      return Response.json(
+        { error: isMultipartRequest
+          ? "上传请求过大，请将论文文件控制在 15 MB 以内。"
+          : "提交内容过大，请缩短论文内容或答辩记录后重试。" },
+        { status: 413 }
+      );
+    }
     if (!process.env.DEEPSEEK_API_KEY) {
       return Response.json(
         { error: "服务器尚未配置 DeepSeek API Key。" },
@@ -91,18 +104,88 @@ if (Number.isFinite(requestedQuestionCount) && requestedQuestionCount >= 1) {
       mode = "start";
       paperText = await extractPaper(file);
     } else {
-      const body = await request.json();
+      if (!contentTypeHeader.includes("application/json")) {
+        return Response.json(
+          { error: "请求格式不正确，请重试。" },
+          { status: 400 }
+        );
+      }
+
+      const rawBody = await request.text();
+      if (new TextEncoder().encode(rawBody).byteLength > 512 * 1024) {
+        return Response.json(
+          { error: "提交内容过大，请缩短论文内容或答辩记录后重试。" },
+          { status: 413 }
+        );
+      }
+
+      let body: any;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        return Response.json(
+          { error: "请求数据格式不正确，请刷新页面后重试。" },
+          { status: 400 }
+        );
+      }
+
+      if (!body || typeof body !== "object" || Array.isArray(body)) {
+        return Response.json(
+          { error: "请求数据格式不正确，请重试。" },
+          { status: 400 }
+        );
+      }
 
       mode = body.mode;
       paperText = body.paperText;
       history = Array.isArray(body.history) ? body.history : [];
-      currentQuestion = body.currentQuestion || "";
-      userAnswer = body.userAnswer || "";
+      currentQuestion = typeof body.currentQuestion === "string" ? body.currentQuestion : "";
+      userAnswer = typeof body.userAnswer === "string" ? body.userAnswer : "";
       questionNumber = Number(body.questionNumber) || 1;
       maxQuestions = Math.min(
         20,
         Math.max(1, Math.floor(Number(body.maxQuestions) || 10))
       );
+
+      if (history.length > 20) {
+        return Response.json(
+          { error: "答辩记录过多，请刷新后重新开始答辩。" },
+          { status: 400 }
+        );
+      }
+
+      let historyCharacters = 0;
+      for (const item of history) {
+        if (
+          !item ||
+          typeof item !== "object" ||
+          typeof item.question !== "string" ||
+          typeof item.answer !== "string" ||
+          (item.feedback !== undefined && typeof item.feedback !== "string") ||
+          (item.score !== undefined && typeof item.score !== "number")
+        ) {
+          return Response.json(
+            { error: "答辩记录格式不正确，请刷新页面后重试。" },
+            { status: 400 }
+          );
+        }
+
+        const feedback = item.feedback || "";
+        historyCharacters += item.question.length + item.answer.length + feedback.length;
+        if (item.question.length > 2_000 || item.answer.length > 8_000 || feedback.length > 8_000) {
+          return Response.json(
+            { error: "答辩记录中的单条内容过长，请缩短后重试。" },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (historyCharacters > 100_000) {
+        return Response.json(
+          { error: "答辩历史记录过长，请刷新页面后重新开始答辩。" },
+          { status: 400 }
+        );
+      }
 
       if (typeof paperText !== "string" || !paperText.trim()) {
         return Response.json(

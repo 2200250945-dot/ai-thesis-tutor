@@ -9,6 +9,15 @@ export async function POST(request: Request) {
 
 
   try {
+    // Reject oversized multipart uploads before parsing the form.
+    const contentLength = Number(request.headers.get("content-length") || 0);
+    if (contentLength > 16 * 1024 * 1024) {
+      return Response.json(
+        { error: "上传请求过大，请将论文文件控制在 15 MB 以内。" },
+        { status: 413 }
+      );
+    }
+
     if (!process.env.DEEPSEEK_API_KEY) {
       return Response.json(
         { error: "服务器尚未配置 DeepSeek API Key。" },
@@ -34,6 +43,14 @@ export async function POST(request: Request) {
       apiKey: process.env.DEEPSEEK_API_KEY,
       baseURL: "https://api.deepseek.com",
     });
+
+    const contentType = request.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("multipart/form-data")) {
+      return Response.json(
+        { error: "请求格式不正确，请通过文件上传功能提交论文。" },
+        { status: 400 }
+      );
+    }
 
     const form = await request.formData();
     const file = form.get("file");
